@@ -1,0 +1,12 @@
+.{
+    .name = .aoc2025,
+    .version = "0.0.0",
+    .fingerprint = 0x52176dd51f381427,
+    .minimum_zig_version = "0.16.0-dev.1364+f0a3df98d",
+    .dependencies = .{},
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
