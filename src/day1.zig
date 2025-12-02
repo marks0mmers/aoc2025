@@ -6,96 +6,63 @@ const Direction = enum(u8) {
     RIGHT = 'R',
 };
 
-const Instructions = struct {
+const Turns = struct {
     dir: Direction,
     count: u16,
 };
 
-const Parsed = []Instructions;
-
-fn parseInput(gpa: std.mem.Allocator, input: *std.Io.Reader) !Parsed {
-    var output: std.ArrayList(Instructions) = .empty;
-    defer output.deinit(gpa);
-    while (input.takeDelimiter('\n')) |lineOpt| {
-        if (lineOpt) |line| {
-            try output.append(gpa, .{
-                .dir = @enumFromInt(line[0]),
-                .count = try std.fmt.parseInt(u16, line[1..], 10),
-            });
-        } else break;
-    } else |err| return err;
-    return output.toOwnedSlice(gpa);
+fn parseInput(input: []const u8, turn: []Turns) void {
+    var i: usize = 0;
+    var it = std.mem.splitScalar(u8, input, '\n');
+    while (it.next()) |line| {
+        if (line.len == 0) continue;
+        turn[i] = .{
+            .dir = @enumFromInt(line[0]),
+            .count = common.parseOrFail(u16, line[1..]),
+        };
+        i += 1;
+    }
 }
 
-fn part1(input: Parsed) usize {
+fn part1(turns: []Turns) usize {
     var pos: i32 = 50;
     var total: usize = 0;
-    for (input) |ins| {
-        const count = ins.count % 100;
-        switch (ins.dir) {
-            .LEFT => {
-                pos -= count;
-                if (pos < 0) pos += 100;
-            },
-            .RIGHT => {
-                pos += count;
-                if (pos > 99) pos -= 100;
-            },
+    for (turns) |turn| {
+        switch (turn.dir) {
+            .LEFT => pos = @mod(pos - turn.count, 100),
+            .RIGHT => pos = @mod(pos + turn.count, 100),
         }
         if (pos == 0) total += 1;
     }
     return total;
 }
 
-fn part2(input: Parsed) usize {
+fn part2(turns: []Turns) usize {
     var pos: i32 = 50;
     var total: usize = 0;
-    for (input) |ins| {
-        total += ins.count / 100;
-        const count = ins.count % 100;
-        switch (ins.dir) {
-            .LEFT => {
-                const prev_pos = pos;
-                pos -= count;
-                if (pos < 0) {
-                    pos += 100;
-                    if (prev_pos != 0) total += 1;
-                }
-            },
-            .RIGHT => {
-                pos += count;
-                if (pos > 99) {
-                    pos -= 100;
-                    if (pos != 0) total += 1;
-                }
-            },
+    for (turns) |turn| {
+        total += @divTrunc(turn.count, 100);
+        const count = @rem(turn.count, 100);
+        if (pos + count >= 100 or (pos > 0 and pos + count <= 0)) {
+            total += 1;
         }
-        if (pos == 0) total += 1;
+        switch (turn.dir) {
+            .LEFT => pos = @mod(pos - turn.count, 100),
+            .RIGHT => pos = @mod(pos + turn.count, 100),
+        }
     }
     return total;
 }
 
 pub fn main() !void {
-    var dbg: std.heap.DebugAllocator(.{}) = .init;
-    const gpa = switch (@import("builtin").mode) {
-        .Debug => dbg.allocator(),
-        .ReleaseSafe, .ReleaseFast, .ReleaseSmall => std.heap.smp_allocator,
-    };
-    defer if (@import("builtin").mode == .Debug) std.debug.assert(dbg.deinit() == .ok);
-
-    var threaded: std.Io.Threaded = .init(gpa);
-    defer threaded.deinit();
-    const io = threaded.io();
-
     const src = @src();
+    const input = @embedFile(comptime common.getFileName(src));
 
-    var file = try common.readFile(gpa, io, src.file);
-    defer file.deinit(gpa, io);
-
-    const parsed = try parseInput(gpa, &file.reader.interface);
-    defer gpa.free(parsed);
-    std.debug.print("Part 1: {}\n", .{part1(parsed)});
-    std.debug.print("Part 2: {}\n", .{part2(parsed)});
+    const line_count = common.countChar(input, '\n');
+    var turns: [line_count]Turns = undefined;
+    parseInput(input, &turns);
+    std.log.default.info("Part 1: {}", .{part1(&turns)});
+    std.log.default.info("Part 2: {}", .{part2(&turns)});
 }
 
 const INPUT =
@@ -112,17 +79,13 @@ const INPUT =
 ;
 
 test "part 1" {
-    var test_buffer = std.mem.zeroes([37]u8);
-    var reader = std.testing.Reader.init(&test_buffer, &.{.{ .buffer = INPUT }});
-    const parsed = try parseInput(std.testing.allocator, &reader.interface);
-    defer std.testing.allocator.free(parsed);
-    try std.testing.expectEqual(3, part1(parsed));
+    var instructions: [10]Turns = undefined;
+    parseInput(INPUT, &instructions);
+    try std.testing.expectEqual(3, part1(&instructions));
 }
 
 test "part 2" {
-    var test_buffer = std.mem.zeroes([37]u8);
-    var reader = std.testing.Reader.init(&test_buffer, &.{.{ .buffer = INPUT }});
-    const parsed = try parseInput(std.testing.allocator, &reader.interface);
-    defer std.testing.allocator.free(parsed);
-    try std.testing.expectEqual(7, part2(parsed));
+    var instructions: [10]Turns = undefined;
+    parseInput(INPUT, &instructions);
+    try std.testing.expectEqual(7, part2(&instructions));
 }

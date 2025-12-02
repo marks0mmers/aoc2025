@@ -57,6 +57,11 @@ pub fn build(b: *std.Build) void {
         return;
     }
 
+    const regex_module = b.dependency("regex", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("regex");
+
     const day_arg = args[0];
     const day_file = b.fmt("src/{s}.zig", .{day_arg});
 
@@ -68,6 +73,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    exe.root_module.addImport("regex", regex_module);
 
     b.installArtifact(exe);
 
