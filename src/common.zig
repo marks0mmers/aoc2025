@@ -41,7 +41,7 @@ pub fn getFileName(comptime src: std.builtin.SourceLocation) []const u8 {
 }
 
 pub fn countChar(comptime input: []const u8, comptime char: u8) comptime_int {
-    @setEvalBranchQuota(20000);
+    @setEvalBranchQuota(50000);
     var total = 0;
     for (input) |c| {
         if (c == char) total += 1;

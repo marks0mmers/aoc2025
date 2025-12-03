@@ -96,5 +96,5 @@ test "part 1" {
 test "part 2" {
     var instructions: [11]IDRange = undefined;
     parseInput(INPUT, &instructions);
-    try std.testing.expectEqual(4174379265, try run(std.testing.allocator, &instructions, false));
+    try std.testing.expectEqual(4174379265, try run(std.testing.allocator, &instructions, true));
 }
