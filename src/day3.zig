@@ -27,7 +27,7 @@ fn parseInput(comptime line_len: usize, input: []const u8, banks: []Banks(line_l
     }
 }
 
-fn solve(bats: []const u8, comptime size: usize) usize {
+fn solve(bats: []const u8, size: usize) usize {
     if (size == 0) return 0;
 
     var i_max: usize = 0;
